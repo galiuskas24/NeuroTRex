@@ -10,12 +10,41 @@ class AbstractMutation:
         raise NotImplemented("Called abstract method.")
 
 
+class ComposedMutation(AbstractMutation):
+
+    def __init__(self, mutations, portions):
+        mutations_len = len(mutations)
+        portions_len = len(portions)
+        assert mutations_len != 0, "Mutation list cannot be empty."
+        assert mutations_len != portions_len, f"Mutation list and portion list must have same length. Were: {mutations_len} != {portions_len}."
+
+        self.mutations = mutations
+
+        self.portion_sum = 0
+        for portion in portions:
+            assert portions > 0, f"Portion must be positive. Was: {portion}."
+            self.portion_sum += portions
+
+        self.positions = []
+        for i in range(portions_len):
+            self.positions[i] = (0 if i == 0 else self.positions[i-1]) + portions[i]
+
+    def mutate(self, genome, gene_tracker):
+        position = random.random() * self.portion_sum
+        count = len(self.mutations)
+
+        for i in range(count):
+            if position < self.positions[i]:
+                self.mutations[i].mutate(genome)
+                break
+        else:
+            self.mutations[count-1].mutate(genome)
+
+
 class UniformWeightMutation(AbstractMutation):
 
     def __init__(self, perturbing_probability, p_min, p_max, n_min, n_max):
         assert 0 <= perturbing_probability <= 1, f"Given value is not a probability: {perturbing_probability}."
-        assert p_min < p_max, f"Min perturbing value must be smaller than max. Was: min={p_min}, max={p_max}."
-        assert n_min < n_max, f"Min new value must be smaller than max. Was: min={n_min}, max={n_max}."
         self.perturbing_probability = perturbing_probability
         self.p_min = p_min
         self.p_max = p_max
@@ -40,7 +69,6 @@ class UniformWeightMutation(AbstractMutation):
 class AddConnectionMutation(AbstractMutation):
 
     def __init__(self, w_min, w_max):
-        assert w_min < w_max, f"Min weight value must be smaller than max value. Was: w_min={w_min}, w_max={w_max}."
         self.w_min = w_min
         self.w_max = w_max
 
@@ -75,7 +103,6 @@ class AddConnectionMutation(AbstractMutation):
 class AddNodeMutation(AbstractMutation):
 
     def __init__(self, activation, b_min, b_max, new_weight):
-        assert b_min < b_max, f"Min bias value must be smaller than max value. Was: b_min={b_min}, b_max={b_max}."
         self.activation = activation
         self.b_min = b_min
         self.b_max = b_max

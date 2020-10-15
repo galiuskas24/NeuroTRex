@@ -1,6 +1,10 @@
 from math import exp, tanh
 
 
+def identity(x):
+    return x
+
+
 def sigmoid(x):
     return 1.0 / (1 + exp(-x))
 

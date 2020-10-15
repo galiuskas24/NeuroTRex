@@ -1,3 +1,143 @@
+import random
+
+from neat.species import Species
+
+
+class GeneticAlgorithm:
+
+    def __init__(self,
+                 generator,
+                 mutations,
+                 crossover,
+                 population_size,
+                 max_generations,
+                 fitness_calculator,
+                 save_best_count,
+                 c1, c2, c3, n, dt):
+        self.generator = generator
+        self.mutations = mutations
+        self.crossover = crossover
+        self.population_size = population_size
+        self.max_generations = max_generations
+        self.fitness_calculator = fitness_calculator
+        self.save_best_count = save_best_count
+        self.c1 = c1
+        self.c2 = c2
+        self.c3 = c3
+        self.n = n
+        self.dt = dt
+
+    def _generate_population(self):
+        population = []
+        for i in range(self.population_size):
+            population.append(self.generator.generate())
+        return population
+
+    def _calculate_fitness(self, current_population):
+        fitness = []
+        for genome in current_population:
+            fitness.append(self.fitness_calculator(build_network(genome)))
+        return fitness
+
+    def _determine_species(self, current_population, fitness, all_species):
+        new_all_species = []
+        for i in range(len(current_population)):
+            genome = current_population[i]
+            fitness = fitness[i]
+
+            for species in all_species:
+                if calculate_genomes_distance(genome, species.representative, self.c1, self.c2, self.c3, self.n) < self.dt:
+                    species.add_genome(genome, fitness)
+                    break
+            else:
+                new_species = Species()
+                new_species.add_genome(genome, fitness)
+                new_all_species.append(new_species)
+
+        all_species = [species for species in all_species if species.count != 0]
+        all_species.extend(new_all_species)
+        [species.finalize() for species in all_species]
+        return all_species
+
+    def _save_best(self, best_fitness, best_genome, all_species, next_population):
+        for species in all_species:
+            genome = species.get_genome(0)
+            fitness = species.get_fitness(0)
+            if best_fitness is None or fitness > best_fitness:
+                best_fitness = fitness
+                best_genome = genome
+
+            save_best_count = min(self.save_best_count, species.count)
+            for i in range(save_best_count):
+                next_population.append(species.get_genome(i))
+
+        return best_fitness, best_genome
+
+    def _fill_population(self, all_species, species_fitness, next_population):
+        while len(next_population) < self.population_size:
+            chosen_species = roulette_wheel(all_species, species_fitness)
+
+            if chosen_species.count != 1:
+                first, second = tuple(random.sample([i for i in range(chosen_species.count)], 2))
+            else:
+                first = second = 0
+
+            if first > second:
+                first, second = second, first
+
+            genome1 = chosen_species.get_genome(first)
+            genome2 = chosen_species.get_genome(second)
+            child = genome1
+
+            crossover, probability = self.crossover
+            if random.random() < probability:
+                child = crossover.cross(genome1, genome2)
+
+            for mutation, probability in self.mutations:
+                if random.random() < probability:
+                    mutation.mutate(child)
+
+            next_population.append(child)
+
+    def optimize(self):
+        current_population = self._generate_population()
+        all_species = [Species(current_population[0])]
+
+        best_fitness = None
+        best_genome = None
+
+        current_iteration = 0
+        while current_iteration < self.max_generations:
+            fitness = self._calculate_fitness(current_population)
+            all_species = self._determine_species(current_population, fitness, all_species)
+            species_fitness = [species.fitness for species in all_species]
+
+            next_population = []
+            best_fitness, best_genome = self._save_best(best_fitness, best_genome, all_species, next_population)
+            self._fill_population(all_species, species_fitness, next_population)
+            [species.reset() for species in all_species]
+
+            current_population = next_population
+            current_iteration += 1
+
+        return build_network(best_genome)
+
+
+def roulette_wheel(units, fitness):
+    units_len = len(units)
+    fitness_len = len(fitness)
+    assert units_len != 0, "Units cannot be empty."
+    assert units_len == fitness_len, f"Units and fitness must have same length. Were: {units_len} != {fitness_len}."
+
+    position = sum(fitness) * random.random()
+    current_sum = 0
+
+    for i in range(units_len):
+        current_sum += units[i]
+        if current_sum < position:
+            return units[i]
+    return units[units_len-1]
+
 
 def build_network(genome):
     layers = {}
@@ -7,15 +147,15 @@ def build_network(genome):
         if node.layer not in layers:
             layers[node.layer] = []
         layers[node.layer].append(node)
+        in_nodes[node.id] = []
+
+    for connection in genome.connections:
+        in_nodes[connection.out_node_id].append(connection.in_node_id)
+
     first_layer = 0
     last_layer = len(layers)-1
     input_nodes_count = len(layers[0])
     output_nodes_count = len(layers[len(layers)-1])
-
-    for connection in genome.connections:
-        if connection.out_node_id not in in_nodes:
-            in_nodes[connection.out_node_id] = []
-        in_nodes[connection.out_node_id].append(connection.in_node_id)
 
     def network_function(network_inputs):
         node_results = {}
@@ -24,7 +164,7 @@ def build_network(genome):
             node_results[input_node.id] = network_inputs[input_node.id-1]
 
         for layer in range(1, last_layer+1):
-            for out_node in layers[layers]:
+            for out_node in layers[layer]:
                 node_sum = 0
                 for in_node in in_nodes[out_node.id]:
                     node_sum += node_results[in_node.id] * genome.get_connection(in_node.id, out_node.id).weight
