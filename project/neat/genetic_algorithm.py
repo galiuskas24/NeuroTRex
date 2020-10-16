@@ -1,25 +1,26 @@
 import random
 
+from neat.gene_tracker import GeneTracker
 from neat.species import Species
 
 
 class GeneticAlgorithm:
 
     def __init__(self,
+                 fitness_calculator,
                  generator,
                  mutations,
                  crossover,
                  population_size,
                  max_generations,
-                 fitness_calculator,
                  save_best_count,
                  c1, c2, c3, n, dt):
+        self.fitness_calculator = fitness_calculator
         self.generator = generator
         self.mutations = mutations
         self.crossover = crossover
         self.population_size = population_size
         self.max_generations = max_generations
-        self.fitness_calculator = fitness_calculator
         self.save_best_count = save_best_count
         self.c1 = c1
         self.c2 = c2
@@ -73,15 +74,13 @@ class GeneticAlgorithm:
 
         return best_fitness, best_genome
 
-    def _fill_population(self, all_species, species_fitness, next_population):
+    def _fill_population(self, gene_tracker, all_species, species_fitness, next_population):
         while len(next_population) < self.population_size:
             chosen_species = roulette_wheel(all_species, species_fitness)
-
             if chosen_species.count != 1:
                 first, second = tuple(random.sample([i for i in range(chosen_species.count)], 2))
             else:
                 first = second = 0
-
             if first > second:
                 first, second = second, first
 
@@ -91,16 +90,17 @@ class GeneticAlgorithm:
 
             crossover, probability = self.crossover
             if random.random() < probability:
-                child = crossover.cross(genome1, genome2)
+                child = crossover.cross(genome1, genome2, gene_tracker)
 
             for mutation, probability in self.mutations:
                 if random.random() < probability:
-                    mutation.mutate(child)
+                    mutation.mutate(child, gene_tracker)
 
             next_population.append(child)
 
     def optimize(self):
         current_population = self._generate_population()
+        gene_tracker = GeneTracker(current_population[0].nodes_count)
         all_species = [Species(current_population[0])]
 
         best_fitness = None
@@ -114,7 +114,7 @@ class GeneticAlgorithm:
 
             next_population = []
             best_fitness, best_genome = self._save_best(best_fitness, best_genome, all_species, next_population)
-            self._fill_population(all_species, species_fitness, next_population)
+            self._fill_population(gene_tracker, all_species, species_fitness, next_population)
             [species.reset() for species in all_species]
 
             current_population = next_population

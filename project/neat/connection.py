@@ -10,3 +10,7 @@ class Connection:
 
     def copy(self):
         return Connection(self.innovation, self.in_node_id, self.out_node_id, self.enabled, self.iteration, self.weight)
+
+    def __str__(self):
+        return f"Connection(innovation = {self.innovation}, in = {self.in_node_id}, out = {self.out_node_id}, " \
+               f"enabled = {self.enabled}, iteration = {self.iteration}, weight = {self.weight})"

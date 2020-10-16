@@ -56,3 +56,11 @@ class Genome:
     @property
     def connections(self):
         return self.connections_dict.values()
+
+    def __str__(self):
+        string = "Nodes:\n"
+        string += "\n".join([str(node) for node in self.nodes])
+        string += "\n"
+        string += "Connections:\n"
+        string += "\n".join([str(connection) for connection in self.connections])
+        return string

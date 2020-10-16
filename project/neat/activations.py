@@ -1,17 +1,34 @@
 from math import exp, tanh
 
 
-def identity(x):
-    return x
+class AbstractActivation:
+
+    def __call__(self, x):
+        raise NotImplemented("Called abstract method.")
+
+    def __str__(self):
+        return type(self).__name__
 
 
-def sigmoid(x):
-    return 1.0 / (1 + exp(-x))
+class Identity(AbstractActivation):
+
+    def __call__(self, x):
+        return x
 
 
-def tanh(x):
-    return tanh(x)
+class Sigmoid(AbstractActivation):
+
+    def __call__(self, x):
+        return 1.0 / (1 + exp(-x))
 
 
-def relu(x):
-    return max(0, x)
+class Tanh(AbstractActivation):
+
+    def __call__(self, x):
+        return tanh(x)
+
+
+class ReLU(AbstractActivation):
+
+    def __call__(self, x):
+        return max(0, x)

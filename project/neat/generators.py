@@ -1,6 +1,6 @@
 import random
 
-from neat.activations import identity
+from neat.activations import Identity
 from neat.genome import Genome
 from neat.node import Node
 
@@ -49,6 +49,9 @@ class ComposedGenerator(AbstractGenerator):
 
 class UniformGenerator(AbstractGenerator):
 
+    INPUT_ACTIVATION = Identity()
+    INPUT_BIAS = 0.0
+
     def __init__(self, input_dim, output_dim, output_activation, b_min, b_max):
         super().__init__(input_dim, output_dim)
         self.b_min = b_min
@@ -61,6 +64,7 @@ class UniformGenerator(AbstractGenerator):
     def generate(self):
         genome = Genome()
         for i in range(self.input_dim):
-            genome.add_node(Node(i+1, 0, identity, 0))
+            genome.add_node(Node(i+1, 0, UniformGenerator.INPUT_ACTIVATION, UniformGenerator.INPUT_BIAS))
         for i in range(self.output_dim):
             genome.add_node(Node(i+1+self.input_dim, 1, self.output_activation, self._new_bias()))
+        return genome
