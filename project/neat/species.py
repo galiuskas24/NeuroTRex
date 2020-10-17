@@ -37,7 +37,7 @@ class Species:
 
     def finalize(self):
         self.finalized = True
-        self.genomes.sort(key=lambda g: g.fitness)
+        self.genomes.sort(key=lambda g: g.fitness, reverse=True)
         self.representative = random.choice(self.genomes).genome
 
     def clear(self):
