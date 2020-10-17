@@ -86,11 +86,12 @@ class GeneticAlgorithm:
 
             genome1 = chosen_species.get_genome(first)
             genome2 = chosen_species.get_genome(second)
-            child = genome1
 
             crossover, probability = self.crossover
             if random.random() < probability:
                 child = crossover.cross(genome1, genome2, gene_tracker)
+            else:
+                child = genome1.copy()
 
             for mutation, probability in self.mutations:
                 if random.random() < probability:

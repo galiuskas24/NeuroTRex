@@ -4,6 +4,14 @@ class Genome:
         self.nodes_dict = {}
         self.connections_dict = {}
 
+    def copy(self):
+        genome_copy = Genome()
+        for node in self.nodes:
+            genome_copy.add_node(node.copy())
+        for connection in self.connections:
+            genome_copy.add_connection(connection.copy())
+        return genome_copy
+
     @property
     def nodes_count(self):
         return len(self.node_ids)

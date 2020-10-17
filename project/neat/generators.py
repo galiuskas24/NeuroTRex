@@ -21,7 +21,7 @@ class ComposedGenerator(AbstractGenerator):
         super().__init__(input_dim, output_dim)
         generators_len = len(generators)
         portions_len = len(portions)
-        assert generators_len == 0, "Generator list cannot be empty."
+        assert generators_len != 0, "Generator list cannot be empty."
         assert generators_len == portions_len, f"Generator list and portion list must have same length. Were: {generators_len} != {portions_len}."
 
         self.generators = generators
