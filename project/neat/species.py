@@ -1,6 +1,13 @@
 import random
 
 
+class GenomeFitness:
+
+    def __init__(self, genome, fitness):
+        self.genome = genome
+        self.fitness = fitness
+
+
 class Species:
 
     def __init__(self, representative=None):
@@ -25,13 +32,13 @@ class Species:
 
     def add_genome(self, genome, fitness):
         assert not self.finalized, "Species were finalized. Cannot add new genome. Call clear before add_genome."
-        self.genomes.append((genome, fitness))
+        self.genomes.append(GenomeFitness(genome, fitness))
         self.fitness_sum += fitness
 
     def finalize(self):
         self.finalized = True
-        self.genomes.sort(key=lambda g1, g2: g1[1] > g2[1])
-        self.representative = random.choice(self.representative).genome
+        self.genomes.sort(key=lambda g: g.fitness)
+        self.representative = random.choice(self.genomes).genome
 
     def clear(self):
         self.finalized = False

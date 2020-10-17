@@ -25,7 +25,7 @@ class Genome:
 
     @property
     def nodes(self):
-        return self.nodes_dict.values()
+        return list(self.nodes_dict.values())
 
     @property
     def connections_count(self):
@@ -55,7 +55,7 @@ class Genome:
 
     @property
     def connections(self):
-        return self.connections_dict.values()
+        return list(self.connections_dict.values())
 
     def __str__(self):
         string = "Nodes:\n"

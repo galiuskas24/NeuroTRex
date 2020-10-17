@@ -8,6 +8,15 @@ class Connection:
         self.iteration = iteration
         self.weight = weight
 
+    def enable(self):
+        assert not self.enabled, "Connection is already enabled."
+        self.enabled = True
+        self.iteration += 1
+
+    def disable(self):
+        assert self.enabled, "Connection is already disabled."
+        self.enabled = False
+
     def copy(self):
         return Connection(self.innovation, self.in_node_id, self.out_node_id, self.enabled, self.iteration, self.weight)
 

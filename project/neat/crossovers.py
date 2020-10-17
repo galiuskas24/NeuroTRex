@@ -19,18 +19,18 @@ class ComposedCrossover(AbstractCrossover):
         crossovers_len = len(crossovers)
         portions_len = len(portions)
         assert crossovers_len != 0, "Crossover list cannot be empty."
-        assert crossovers_len != portions_len, f"Crossover list and portion list must have same length. Were: {crossovers_len} != {portions_len}."
+        assert crossovers_len == portions_len, f"Crossover list and portion list must have same length. Were: {crossovers_len} != {portions_len}."
 
         self.crossovers = crossovers
 
         self.portion_sum = 0
         for portion in portions:
-            assert portions > 0, f"Portion must be positive. Was: {portion}."
-            self.portion_sum += portions
+            assert portion > 0, f"Portion must be positive. Was: {portion}."
+            self.portion_sum += portion
 
         self.positions = []
         for i in range(portions_len):
-            self.positions[i] = (0 if i == 0 else self.positions[i-1]) + portions[i]
+            self.positions.append((0 if i == 0 else self.positions[i-1]) + portions[i])
 
     def cross(self, genome1, genome2, gene_tracker):
         position = random.random() * self.portion_sum
@@ -38,10 +38,9 @@ class ComposedCrossover(AbstractCrossover):
 
         for i in range(count):
             if position < self.positions[i]:
-                self.crossovers[i].cross(genome1, genome2)
-                break
+                return self.crossovers[i].cross(genome1, genome2, gene_tracker)
         else:
-            self.crossovers[count-1].cross(genome1, genome2)
+            return self.crossovers[count-1].cross(genome1, genome2, gene_tracker)
 
 
 class StandardCrossover(AbstractCrossover):
@@ -54,12 +53,14 @@ class StandardCrossover(AbstractCrossover):
         for node in genome1.nodes:
             child_genome.add_node(node.copy())
 
-        for connection in genome1.connection:
+        for connection in genome1.connections:
             new_connection = connection.copy()
             if genome2.contains_connection(new_connection.in_node_id, new_connection.out_node_id):
                 other_connection = genome2.get_connection(new_connection.in_node_id, new_connection.out_node_id)
                 if not new_connection.enabled or not other_connection.enabled:
-                    new_connection.enabled = random.random() < self.disable_probability
+                    should_enable = random.random() > self.disable_probability
+                    if new_connection.enabled != should_enable:
+                        new_connection.disable() if new_connection.enabled else new_connection.enable()
                 if random.choice([True, False]):
                     new_connection.weight = other_connection.weight
             child_genome.add_connection(new_connection)

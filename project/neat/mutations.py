@@ -16,18 +16,18 @@ class ComposedMutation(AbstractMutation):
         mutations_len = len(mutations)
         portions_len = len(portions)
         assert mutations_len != 0, "Mutation list cannot be empty."
-        assert mutations_len != portions_len, f"Mutation list and portion list must have same length. Were: {mutations_len} != {portions_len}."
+        assert mutations_len == portions_len, f"Mutation list and portion list must have same length. Were: {mutations_len} != {portions_len}."
 
         self.mutations = mutations
 
         self.portion_sum = 0
         for portion in portions:
-            assert portions > 0, f"Portion must be positive. Was: {portion}."
-            self.portion_sum += portions
+            assert portion > 0, f"Portion must be positive. Was: {portion}."
+            self.portion_sum += portion
 
         self.positions = []
         for i in range(portions_len):
-            self.positions[i] = (0 if i == 0 else self.positions[i-1]) + portions[i]
+            self.positions.append((0 if i == 0 else self.positions[i-1]) + portions[i])
 
     def mutate(self, genome, gene_tracker):
         position = random.random() * self.portion_sum
@@ -35,10 +35,10 @@ class ComposedMutation(AbstractMutation):
 
         for i in range(count):
             if position < self.positions[i]:
-                self.mutations[i].mutate(genome)
+                self.mutations[i].mutate(genome, gene_tracker)
                 break
         else:
-            self.mutations[count-1].mutate(genome)
+            self.mutations[count-1].mutate(genome, gene_tracker)
 
 
 class UniformWeightMutation(AbstractMutation):
@@ -52,7 +52,7 @@ class UniformWeightMutation(AbstractMutation):
         self.n_max = n_max
 
     def _new_noise(self):
-        random.uniform(self.p_min, self.p_max)
+        return random.uniform(self.p_min, self.p_max)
 
     def _new_weight(self):
         return random.uniform(self.n_min, self.n_max)
@@ -80,20 +80,23 @@ class AddConnectionMutation(AbstractMutation):
             return False
         return genome.get_connection(in_node_id, out_node_id).enabled
 
-    def mutate(self, genome, gene_tracker):
+    def mutate(self, genome, gene_tracker, max_tries=100):
         # TODO: Find a way how to efficiently determine a non-existing (or disabled) connection.
+        current_try = 0
         while True:
             in_node, out_node = tuple(random.sample(genome.nodes, 2))
+            if in_node.layer > out_node.layer:
+                in_node, out_node = out_node, in_node
             if in_node.layer != out_node.layer and not self._contains_enabled_connection(genome, in_node.id, out_node.id):
                 break
 
-        if in_node.layer > out_node.layer:
-            in_node, out_node = out_node, in_node
+            current_try += 1
+            if current_try >= max_tries:
+                return
 
         if genome.contains_connection(in_node.id, out_node.id):
             connection = genome.get_connection(in_node.id, out_node.id)
-            connection.enabled = True
-            connection.iteration += 1
+            connection.enable()
         else:
             innovation = gene_tracker.get_connection_innovation(in_node.id, out_node.id)
             connection = Connection(innovation, in_node.id, out_node.id, True, 0, self._new_weight())
@@ -120,16 +123,16 @@ class AddNodeMutation(AbstractMutation):
         connection = random.choice(possible_connections)
         new_node_id = gene_tracker.get_node_id(connection.in_node_id, connection.out_node_id, connection.iteration)
 
-        in_node_layer = genome.get_node(connection.in_node_id)
-        out_node_layer = genome.get_node(connection.out_node_id)
-        new_node_layer = out_node_layer
-        if in_node_layer + 1 == out_node_layer:
+        in_node_layer = genome.get_node(connection.in_node_id).layer
+        out_node_layer = genome.get_node(connection.out_node_id).layer
+        new_node_layer = in_node_layer + 1
+        if new_node_layer == out_node_layer:
             for node in genome.nodes:
-                if node.layer == new_node_layer:
+                if node.layer >= new_node_layer:
                     node.layer += 1
         genome.add_node(Node(new_node_id, new_node_layer, self.activation, self._new_bias()))
 
-        connection.enabled = False
+        connection.disable()
 
         innovation_in = gene_tracker.get_connection_innovation(connection.in_node_id, new_node_id)
         genome.add_connection(Connection(innovation_in, connection.in_node_id, new_node_id, True, 0, self.new_weight))

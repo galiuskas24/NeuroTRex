@@ -44,15 +44,15 @@ class GeneticAlgorithm:
         new_all_species = []
         for i in range(len(current_population)):
             genome = current_population[i]
-            fitness = fitness[i]
+            genome_fitness = fitness[i]
 
             for species in all_species:
                 if calculate_genomes_distance(genome, species.representative, self.c1, self.c2, self.c3, self.n) < self.dt:
-                    species.add_genome(genome, fitness)
+                    species.add_genome(genome, genome_fitness)
                     break
             else:
                 new_species = Species()
-                new_species.add_genome(genome, fitness)
+                new_species.add_genome(genome, genome_fitness)
                 new_all_species.append(new_species)
 
         all_species = [species for species in all_species if species.count != 0]
@@ -106,8 +106,8 @@ class GeneticAlgorithm:
         best_fitness = None
         best_genome = None
 
-        current_iteration = 0
-        while current_iteration < self.max_generations:
+        current_generation = 0
+        while current_generation < self.max_generations:
             fitness = self._calculate_fitness(current_population)
             all_species = self._determine_species(current_population, fitness, all_species)
             species_fitness = [species.fitness for species in all_species]
@@ -115,10 +115,11 @@ class GeneticAlgorithm:
             next_population = []
             best_fitness, best_genome = self._save_best(best_fitness, best_genome, all_species, next_population)
             self._fill_population(gene_tracker, all_species, species_fitness, next_population)
-            [species.reset() for species in all_species]
+            [species.clear() for species in all_species]
 
             current_population = next_population
-            current_iteration += 1
+            current_generation += 1
+            print(f"generation {current_generation}, best fitness: {best_fitness}")
 
         return build_network(best_genome)
 
@@ -133,8 +134,8 @@ def roulette_wheel(units, fitness):
     current_sum = 0
 
     for i in range(units_len):
-        current_sum += units[i]
-        if current_sum < position:
+        current_sum += fitness[i]
+        if position < current_sum:
             return units[i]
     return units[units_len-1]
 
@@ -150,7 +151,8 @@ def build_network(genome):
         in_nodes[node.id] = []
 
     for connection in genome.connections:
-        in_nodes[connection.out_node_id].append(connection.in_node_id)
+        if connection.enabled:
+            in_nodes[connection.out_node_id].append(connection.in_node_id)
 
     first_layer = 0
     last_layer = len(layers)-1
@@ -167,7 +169,7 @@ def build_network(genome):
             for out_node in layers[layer]:
                 node_sum = 0
                 for in_node in in_nodes[out_node.id]:
-                    node_sum += node_results[in_node.id] * genome.get_connection(in_node.id, out_node.id).weight
+                    node_sum += node_results[in_node] * genome.get_connection(in_node, out_node.id).weight
                 node_results[out_node.id] = out_node.activation(node_sum + out_node.bias)
 
         network_outputs = [0 for _ in range(output_nodes_count)]
@@ -180,8 +182,10 @@ def build_network(genome):
 
 
 def calculate_genomes_distance(genome1, genome2, c1, c2, c3, n):
-    max_innovation1 = max([c.innovation for c in genome1.connections])
-    max_innovation2 = max([c.innovation for c in genome2.connections])
+    innovation_list1 = [c.innovation for c in genome1.connections]
+    innovation_list2 = [c.innovation for c in genome2.connections]
+    max_innovation1 = max(innovation_list1) if len(innovation_list1) != 0 else 0
+    max_innovation2 = max(innovation_list2) if len(innovation_list2) != 0 else 0
     split_point = min(max_innovation1, max_innovation2)
 
     excess_count = 0
@@ -206,4 +210,7 @@ def calculate_genomes_distance(genome1, genome2, c1, c2, c3, n):
             else:
                 disjoint_count += 1
 
-    return excess_count * c1 / n + disjoint_count * c2 / n + weight_difference_sum / matching_count * c3
+    excess_difference = excess_count * c1 / n
+    disjoint_difference = disjoint_count * c2 / n
+    weight_difference = weight_difference_sum / matching_count * c3 if matching_count != 0 else 0
+    return excess_difference + disjoint_difference + weight_difference

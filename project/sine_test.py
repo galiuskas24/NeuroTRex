@@ -1,17 +1,13 @@
-from neat.activations import Sigmoid
+from math import sin
+
+from neat.activations import Tanh
 from neat.crossovers import StandardCrossover
 from neat.generators import UniformGenerator
 from neat.genetic_algorithm import GeneticAlgorithm
 from neat.mutations import UniformWeightMutation, AddConnectionMutation, AddNodeMutation
 
 
-class NeatSigmoid(Sigmoid):
-    
-    def __call__(self, x):
-        return super(NeatSigmoid, self).__call__(4.9 * x)
-
-
-ACTIVATION = NeatSigmoid()
+ACTIVATION = Tanh()
 
 MIN_BIAS = -0.1
 MAX_BIAS = 0.1
@@ -31,9 +27,9 @@ NEW_WEIGHT = 1.0
 CROSSOVER_PROBABILITY = 0.75
 DISABLE_CONNECTION_PROBABILITY = 0.75
 
-POPULATION_SIZE = 150
-MAX_GENERATIONS = 1000
-SAVE_BEST_COUNT = 1
+POPULATION_SIZE = 100
+MAX_GENERATIONS = 300
+SAVE_BEST_COUNT = 0
 
 C1 = 1.0
 C2 = 1.0
@@ -42,7 +38,7 @@ N = 1
 DT = 3.0
 
 
-class DefaultNeat(GeneticAlgorithm):
+class SineTestNeat(GeneticAlgorithm):
 
     def __init__(self,
                  input_dim,
@@ -52,7 +48,8 @@ class DefaultNeat(GeneticAlgorithm):
             fitness_calculator=fitness_calculator,
             generator=UniformGenerator(input_dim, output_dim, ACTIVATION, MIN_BIAS, MAX_BIAS),
             mutations=[
-                (UniformWeightMutation(PERTURBING_PROBABILITY, PERTURBING_MIN, PERTURBING_MAX, MIN_WEIGHT, MAX_WEIGHT), WEIGHT_MUTATION_PROBABILITY),
+                (UniformWeightMutation(PERTURBING_PROBABILITY, PERTURBING_MIN, PERTURBING_MAX, MIN_WEIGHT, MAX_WEIGHT),
+                 WEIGHT_MUTATION_PROBABILITY),
                 (AddConnectionMutation(MIN_WEIGHT, MAX_WEIGHT), ADD_CONNECTION_PROBABILITY),
                 (AddNodeMutation(ACTIVATION, MIN_BIAS, MAX_BIAS, NEW_WEIGHT), ADD_NODE_PROBABILITY)
             ],
@@ -66,3 +63,32 @@ class DefaultNeat(GeneticAlgorithm):
             n=N,
             dt=DT
         )
+
+
+min_x = -3
+max_x = 3
+step = 0.1
+
+current = min_x
+pairs = []
+while current < max_x:
+    pairs.append((current, sin(current)))
+    current += step
+
+
+def calculate_mse(f, verbose=False):
+    mse = 0
+    for x, y in pairs:
+        output = f([x])[0]
+        diff = output - y
+        mse += diff ** 2
+
+        if verbose:
+            print(f"x = {x}, y = {y}, f = {output}, difference={diff}")
+
+    return len(pairs) / mse
+
+
+neat = SineTestNeat(1, 1, calculate_mse)
+best_function = neat.optimize()
+calculate_mse(best_function, verbose=True)

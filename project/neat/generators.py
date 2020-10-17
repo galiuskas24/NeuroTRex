@@ -21,19 +21,19 @@ class ComposedGenerator(AbstractGenerator):
         super().__init__(input_dim, output_dim)
         generators_len = len(generators)
         portions_len = len(portions)
-        assert generators_len != 0, "Generator list cannot be empty."
-        assert generators_len != portions_len, f"Generator list and portion list must have same length. Were: {generators_len} != {portions_len}."
+        assert generators_len == 0, "Generator list cannot be empty."
+        assert generators_len == portions_len, f"Generator list and portion list must have same length. Were: {generators_len} != {portions_len}."
 
         self.generators = generators
 
         self.portion_sum = 0
         for portion in portions:
-            assert portions > 0, f"Portion must be positive. Was: {portion}."
-            self.portion_sum += portions
+            assert portion > 0, f"Portion must be positive. Was: {portion}."
+            self.portion_sum += portion
 
         self.positions = []
         for i in range(portions_len):
-            self.positions[i] = (0 if i == 0 else self.positions[i-1]) + portions[i]
+            self.positions.append((0 if i == 0 else self.positions[i-1]) + portions[i])
 
     def generate(self):
         position = random.random() * self.portion_sum
@@ -41,10 +41,9 @@ class ComposedGenerator(AbstractGenerator):
 
         for i in range(count):
             if position < self.positions[i]:
-                self.generators[i].generate()
-                break
+                return self.generators[i].generate()
         else:
-            self.generators[count-1].generate()
+            return self.generators[count-1].generate()
 
 
 class UniformGenerator(AbstractGenerator):
