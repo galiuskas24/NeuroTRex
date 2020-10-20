@@ -17,11 +17,11 @@ PERTURBING_PROBABILITY = 0.99
 PERTURBING_MIN = -0.2
 PERTURBING_MAX = 0.2
 
-ADD_CONNECTION_PROBABILITY = 0.25
+ADD_CONNECTION_PROBABILITY = 0.15
 MIN_WEIGHT = -1.0
 MAX_WEIGHT = 1.0
 
-ADD_NODE_PROBABILITY = 0.23
+ADD_NODE_PROBABILITY = 0.13
 NEW_WEIGHT = 1.0
 
 CROSSOVER_PROBABILITY = 0.9
@@ -61,7 +61,9 @@ class SineTestNeat(GeneticAlgorithm):
             c2=C2,
             c3=C3,
             n=N,
-            dt=DT
+            dt=DT,
+            print_progress=True,
+            evolution_path="sine-test-progress"
         )
 
 

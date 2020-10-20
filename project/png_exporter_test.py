@@ -60,4 +60,4 @@ genome.add_connection(Connection(1, 16, 4, False, 0, -0.4))
 genome.add_connection(Connection(1, 16, 5, True, 0, 0.82))
 
 exporter = PngExporter(width=1920, height=1080, show_disabled=True)
-exporter.export(genome, "test-export.png")
+exporter.save(genome, "test-export.png")

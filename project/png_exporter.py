@@ -51,11 +51,10 @@ class PngExporter:
             return self.disabled_weight_color
         return self.positive_weight_color if connection.weight > 0 else self.negative_weight_color
 
-
     def _resolution_error(self, message):
         raise Exception(f"Resolution is too small. {message}")
 
-    def export(self, genome, name):
+    def _create_image(self, genome):
         image = Image.new("RGB", (self.width, self.height), color=self.background_color)
         d = ImageDraw.Draw(image)
 
@@ -103,4 +102,10 @@ class PngExporter:
             width = int(size * self.node_outline_width_part)
             d.ellipse(points, outline=self.node_outline_color, fill=self.node_fill_color, width=width)
 
-        image.save(name)
+        return image
+
+    def show(self, genome, title=""):
+        self._create_image(genome).show(title)
+
+    def save(self, genome, name):
+        self._create_image(genome).save(name)

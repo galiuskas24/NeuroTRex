@@ -2,6 +2,7 @@ import random
 
 from neat.gene_tracker import GeneTracker
 from neat.species import Species
+from png_exporter import PngExporter
 
 
 class GeneticAlgorithm:
@@ -14,7 +15,9 @@ class GeneticAlgorithm:
                  population_size,
                  max_generations,
                  save_best_count,
-                 c1, c2, c3, n, dt):
+                 c1, c2, c3, n, dt,
+                 print_progress=True,
+                 evolution_path=None):
         self.fitness_calculator = fitness_calculator
         self.generator = generator
         self.mutations = mutations
@@ -27,6 +30,11 @@ class GeneticAlgorithm:
         self.c3 = c3
         self.n = n
         self.dt = dt
+        self.print_progress = print_progress
+        self.evolution_path = evolution_path
+        if self.evolution_path is not None:
+            self.png_exporter = PngExporter()
+            self.best_found_count = 0
 
     def _generate_population(self):
         population = []
@@ -67,6 +75,9 @@ class GeneticAlgorithm:
             if best_fitness is None or fitness > best_fitness:
                 best_fitness = fitness
                 best_genome = genome
+                if self.evolution_path is not None:
+                    self.best_found_count += 1
+                    self.png_exporter.save(best_genome, f"{self.evolution_path}/{self.best_found_count}.png")
 
             save_best_count = min(self.save_best_count, species.count)
             for i in range(save_best_count):
@@ -120,7 +131,8 @@ class GeneticAlgorithm:
 
             current_population = next_population
             current_generation += 1
-            print(f"generation {current_generation}, best fitness: {best_fitness}")
+            if self.print_progress:
+                print(f"generation: {current_generation}, best fitness: {best_fitness}")
 
         return build_network(best_genome)
 
