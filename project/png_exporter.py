@@ -69,7 +69,7 @@ class PngExporter:
         raise Exception(f"Resolution is too small. {message}")
 
     def _create_image(self, genome):
-        image = Image.new("RGB", (self.width, self.height), color=self.background_color)
+        image = Image.new("RGBA", (self.width, self.height), color=self.background_color)
         d = ImageDraw.Draw(image)
 
         default_node_size = int(self.width * self.node_size_part)
