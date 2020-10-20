@@ -17,8 +17,10 @@ class PngExporter:
                  negative_weight_color=(255, 0, 0),
                  positive_weight_color=(0, 255, 0),
                  disabled_weight_color=(192, 192, 192),
-                 node_fill_color=(168, 168, 168),
-                 node_outline_color=(32, 32, 32)):
+                 input_node_fill_color=(90, 90, 90),
+                 hidden_node_fill_color=(150, 150, 150),
+                 output_node_fill_color=(230, 230, 230),
+                 node_outline_color=(0, 0, 0)):
         self.width = width
         self.height = height
         self.abs_max_weight = abs_max_weight
@@ -32,7 +34,9 @@ class PngExporter:
         self.negative_weight_color = negative_weight_color
         self.positive_weight_color = positive_weight_color
         self.disabled_weight_color = disabled_weight_color
-        self.node_fill_color = node_fill_color
+        self.input_node_fill_color = input_node_fill_color
+        self.hidden_node_fill_color = hidden_node_fill_color
+        self.output_node_fill_color = output_node_fill_color
         self.node_outline_color = node_outline_color
 
     def _separate_layers(self, genome):
@@ -50,6 +54,16 @@ class PngExporter:
         if not connection.enabled:
             return self.disabled_weight_color
         return self.positive_weight_color if connection.weight > 0 else self.negative_weight_color
+
+    def _determine_node_color(self, node, layers):
+        first_layer = 0
+        last_layer = len(layers) - 1
+        if node.layer == first_layer:
+            return self.input_node_fill_color
+        elif node.layer == last_layer:
+            return self.output_node_fill_color
+        else:
+            return self.hidden_node_fill_color
 
     def _resolution_error(self, message):
         raise Exception(f"Resolution is too small. {message}")
@@ -96,11 +110,13 @@ class PngExporter:
             color = self._determine_weight_color(connection)
             d.line(points, width=width, fill=color)
 
-        for node_x, node_y, size in node_data.values():
+        for node_id in node_data:
+            node_x, node_y, size = node_data[node_id]
             radius = size // 2
             points = [(node_x - radius, node_y - radius), (node_x + radius, node_y + radius)]
             width = int(size * self.node_outline_width_part)
-            d.ellipse(points, outline=self.node_outline_color, fill=self.node_fill_color, width=width)
+            color = self._determine_node_color(genome.get_node(node_id), layers)
+            d.ellipse(points, outline=self.node_outline_color, fill=color, width=width)
 
         return image
 
