@@ -63,6 +63,10 @@ class GeneticAlgorithm:
         return all_species
 
     def _save_best(self, best_fitness, best_genome, all_species, next_population):
+        # Save all time best genome.
+        if best_genome is not None:
+            next_population.append(best_genome)
+
         found_new_best = False
         for species in all_species:
             genome = species.get_genome(0)
