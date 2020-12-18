@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # but I believe that there is room from progress. We should try to tweak the
     # parameters of the NEAT genetic algorithm.
 
-    neat = DefaultNeat(5, 3, calculate_fitness, evolution_path='results/evolution')
+    neat = DefaultNeat(4, 3, calculate_fitness, evolution_path='results/evolution')
     best_genome = neat.optimize()
 
     with open('best_genome.pickle', 'wb') as f:

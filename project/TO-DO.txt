@@ -1,0 +1,72 @@
+------------------------------- 1. -------------------------------
+Play with features that are given to the neural network.
+Currently, speed game was dropped as fifth feature and was
+integrated with the velocity dependant x-axis. Obstacle's
+x position and width are divided with the current speed.
+y position and height are not changed in any way as velocity
+has only x component. This was inspired with the Einstein
+special relativity of width contraction along objects movement
+direction. Take a note that formula is not the same as we
+are using linear function instead of a Lorentz factor.
+------------------------------------------------------------------
+
+
+------------------------------- 2. -------------------------------
+Tweak parameters of a DefaultNeat. Even though this works very
+well, I believe that there is still plenty of room for progress.
+------------------------------------------------------------------
+
+
+------------------------------- 3. -------------------------------
+This is more of a game mechanics tweak. There is one problem with
+obstacles generation. You can find in the code that obstacle is
+generated if and only if there are no obstacles. See this piece of
+code below:
+
+================================================
+# draw one obstacle
+if len(self.obstacles) == 0:  <-- if and only if there are no obstacles!
+    if random.randint(0, 2) == 0:
+        self.obstacles.append(SmallCactus())
+    elif random.randint(0, 2) == 0:
+        self.obstacles.append(BigCactus())
+    elif random.randint(0, 2) == 0:
+        self.obstacles.append(Bird())
+================================================
+
+I feel that two additional principles should be satisfied:
+a) More obstacles in the same time on the screen.
+b) Do not always generate obstacles if there are no obstacles;
+   empty field should be legitimate as well.
+What I am trying to say is that we have extremely deterministic
+algorithm for obstacle generation and that is the one where we
+have exactly one obstacle on the screen in every single frame.
+Algorithm should be more random such that a) and b) have some
+kind of probability for occurring too. Furthermore, as we mentioned
+before, we should also add support for a random placement of a bird
+on the screen (random y position). It would be interesting to see
+if agent could adopt to all of these situations. I think this is
+a natural thing to do since we now have a very good agent capable
+of overcoming this extra demands.
+------------------------------------------------------------------
+
+
+------------------------------- 4. -------------------------------
+By playing the game manually, I have found out that TRex makes a
+'full' jump upon pressing 'UP' button on the keyboard. This might
+be a problem later in the game when obstacles are generating more
+quickly as it may not have enough time to react or may land on the
+obstacle immediately. Is there any way to allow smaller jump? We
+should figure out how to add this to the neural network... Maybe
+we could implement mechanism of HOLDING the key for the bigger
+jump? Just pressing the key lightly would mean smaller jump?
+------------------------------------------------------------------
+
+
+---------------------------- NOTES -------------------------------
+'current-best-old-features' -> agent with old features + nn images
+'current-best-new-features' -> agent with new features + nn images
+
+Check the best score of 'old' and 'new' ;) Can be seen in the name
+of the last 'png' image in 'evolution' directories. (1840 vs 4321)
+------------------------------------------------------------------

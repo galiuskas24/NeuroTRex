@@ -18,15 +18,13 @@ class Agent:
         obstacles_state:: int -> list of (x, y, width, height) foreach dino
         '''
 
-        # TODO
-        # I believe that game_state is not expressive enough. Currently, neural network
-        # receives [x, y, width, height] of the CLOSEST obstacle or [0, 0, 0, 0] if there is
-        # no obstacle on the path + (appended) speed of the game. From my point of view,
-        # we should add more information, maybe angles of some kind, or something more
-        # sophisticated?
-
+        # Get closest obstacle or all zeros if there is no obstacle on the way.
         game_state = [0, 0, 0, 0] if len(obstacles_state) == 0 else list(obstacles_state[0])
-        game_state.append(game_speed)
+
+        # Divide velocity dependant dimension (x-axis) with the speed.
+        game_state[0] /= game_speed
+        game_state[2] /= game_speed
+
         values = self.nn(game_state)
 
         max_pos = None
