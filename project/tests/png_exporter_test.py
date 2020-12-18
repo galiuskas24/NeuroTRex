@@ -2,7 +2,7 @@ from neat.activations import Identity, ReLU
 from neat.connection import Connection
 from neat.genome import Genome
 from neat.node import Node
-from png_exporter import PngExporter
+from neat.png_exporter import PngExporter
 
 genome = Genome()
 genome.add_node(Node(1, 0, Identity(), 0.0))

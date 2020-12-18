@@ -2,7 +2,7 @@ import random
 
 from neat.gene_tracker import GeneTracker
 from neat.species import Species
-from png_exporter import PngExporter
+from neat.png_exporter import PngExporter
 
 
 class GeneticAlgorithm:
@@ -42,12 +42,6 @@ class GeneticAlgorithm:
             population.append(self.generator.generate())
         return population
 
-    def _calculate_fitness(self, current_population):
-        fitness = []
-        for genome in current_population:
-            fitness.append(self.fitness_calculator(build_network(genome)))
-        return fitness
-
     def _determine_species(self, current_population, fitness, all_species):
         new_all_species = []
         for i in range(len(current_population)):
@@ -69,19 +63,23 @@ class GeneticAlgorithm:
         return all_species
 
     def _save_best(self, best_fitness, best_genome, all_species, next_population):
+        found_new_best = False
         for species in all_species:
             genome = species.get_genome(0)
             fitness = species.get_fitness(0)
+            print(genome == best_genome)
             if best_fitness is None or fitness > best_fitness:
                 best_fitness = fitness
                 best_genome = genome
-                if self.evolution_path is not None:
-                    self.best_found_count += 1
-                    self.png_exporter.save(best_genome, f"{self.evolution_path}/{self.best_found_count}.png")
+                found_new_best = True
 
             save_best_count = min(self.save_best_count, species.count)
             for i in range(save_best_count):
                 next_population.append(species.get_genome(i))
+
+        if self.evolution_path is not None and found_new_best:
+            self.best_found_count += 1
+            self.png_exporter.save(best_genome, f"{self.evolution_path}/{self.best_found_count}-{best_fitness}.png")
 
         return best_fitness, best_genome
 
@@ -120,7 +118,7 @@ class GeneticAlgorithm:
 
         current_generation = 0
         while current_generation < self.max_generations:
-            fitness = self._calculate_fitness(current_population)
+            fitness = self.fitness_calculator(current_population, current_generation+1)
             all_species = self._determine_species(current_population, fitness, all_species)
             species_fitness = [species.fitness for species in all_species]
 
@@ -134,7 +132,7 @@ class GeneticAlgorithm:
             if self.print_progress:
                 print(f"generation: {current_generation}, best fitness: {best_fitness}")
 
-        return build_network(best_genome)
+        return best_genome
 
 
 def roulette_wheel(units, fitness):
@@ -151,47 +149,6 @@ def roulette_wheel(units, fitness):
         if position < current_sum:
             return units[i]
     return units[units_len-1]
-
-
-def build_network(genome):
-    layers = {}
-    in_nodes = {}
-
-    for node in genome.nodes:
-        if node.layer not in layers:
-            layers[node.layer] = []
-        layers[node.layer].append(node)
-        in_nodes[node.id] = []
-
-    for connection in genome.connections:
-        if connection.enabled:
-            in_nodes[connection.out_node_id].append(connection.in_node_id)
-
-    first_layer = 0
-    last_layer = len(layers)-1
-    input_nodes_count = len(layers[0])
-    output_nodes_count = len(layers[len(layers)-1])
-
-    def network_function(network_inputs):
-        node_results = {}
-
-        for input_node in layers[first_layer]:
-            node_results[input_node.id] = network_inputs[input_node.id-1]
-
-        for layer in range(1, last_layer+1):
-            for out_node in layers[layer]:
-                node_sum = 0
-                for in_node in in_nodes[out_node.id]:
-                    node_sum += node_results[in_node] * genome.get_connection(in_node, out_node.id).weight
-                node_results[out_node.id] = out_node.activation(node_sum + out_node.bias)
-
-        network_outputs = [0 for _ in range(output_nodes_count)]
-        for output_node in layers[last_layer]:
-            index = output_node.id - input_nodes_count - 1
-            network_outputs[index] = node_results[output_node.id]
-        return network_outputs
-
-    return network_function
 
 
 def calculate_genomes_distance(genome1, genome2, c1, c2, c3, n):

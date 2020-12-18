@@ -63,7 +63,7 @@ class SineTestNeat(GeneticAlgorithm):
             n=N,
             dt=DT,
             print_progress=True,
-            evolution_path="sine-test-progress"
+            evolution_path="sine-test-progress-1"
         )
 
 
@@ -88,9 +88,16 @@ def calculate_mse(f, verbose=False):
         if verbose:
             print(f"x = {x}, y = {y}, f = {output}, difference={diff}")
 
-    return len(pairs) / mse
+    return mse / len(pairs)
 
 
-neat = SineTestNeat(1, 1, calculate_mse)
-best_function = neat.optimize()
-calculate_mse(best_function, verbose=True)
+def calculate_fitness(genomes, _):
+    fitness = []
+    for genome in genomes:
+        fitness.append(1.0 / calculate_mse(genome.build_network()))
+    return fitness
+
+
+neat = SineTestNeat(1, 1, calculate_fitness)
+best_genome = neat.optimize()
+calculate_mse(best_genome.build_network(), verbose=True)
