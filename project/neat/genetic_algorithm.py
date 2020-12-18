@@ -67,7 +67,6 @@ class GeneticAlgorithm:
         for species in all_species:
             genome = species.get_genome(0)
             fitness = species.get_fitness(0)
-            print(genome == best_genome)
             if best_fitness is None or fitness > best_fitness:
                 best_fitness = fitness
                 best_genome = genome
