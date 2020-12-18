@@ -63,6 +63,13 @@ jump? Just pressing the key lightly would mean smaller jump?
 ------------------------------------------------------------------
 
 
+------------------------------- 5. -------------------------------
+Along with the random y position of the bird, we should also add
+a bird (or maybe even other kind of an obstacle) which could NOT
+be jumped over as this makes DUCK action obsolete...
+------------------------------------------------------------------
+
+
 ---------------------------- NOTES -------------------------------
 'current-best-old-features' -> agent with old features + nn images
 'current-best-new-features' -> agent with new features + nn images
